@@ -1,1 +1,4 @@
 requests
+BeautifulSoup4
+lxml
+pathvalidate
