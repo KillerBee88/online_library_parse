@@ -5,6 +5,20 @@ from pathvalidate import sanitize_filename
 from urllib.parse import urljoin, urlsplit, unquote
 
 
+def get_book_genre(book_id):
+    url = f'https://tululu.org/b{book_id}/'
+    response = requests.get(url)
+    response.raise_for_status()
+
+    soup = BeautifulSoup(response.text, 'lxml')
+
+    book_info_container = soup.find('div', id='content')
+
+    genre = book_info_container.find('span', class_='d_book').find('a').get_text(strip=True)
+
+    return genre
+
+
 def download_comments(book_id, filename):
     url = f'https://tululu.org/b{book_id}/'
     response = requests.get(url)
@@ -89,6 +103,7 @@ for book_id in range(1, 11):
     title, author = split_title_and_author
     title = title.strip()
     author = author.strip()
+    genre = get_book_genre(book_id)
 
     txt_url = f'https://tululu.org/txt.php?id={book_id}'
     txt_filename = f'{book_id}_{sanitize_filename(title)}'
@@ -99,3 +114,5 @@ for book_id in range(1, 11):
     download_comments(book_id, os.path.join('comments', comments_filename))
     download_txt(txt_url, txt_filename)
     download_image(img_url, img_filename)
+    print(title)
+    print(genre)
