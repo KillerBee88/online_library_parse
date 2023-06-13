@@ -5,6 +5,28 @@ from pathvalidate import sanitize_filename
 from urllib.parse import urljoin, urlsplit, unquote
 
 
+def parse_book_page(book_url):
+    response = requests.get(book_url)
+    response.raise_for_status()
+
+    soup = BeautifulSoup(response.text, 'lxml')
+
+    book_info_container = soup.find('div', id='content')
+
+    title_and_author = book_info_container.find('h1').get_text(strip=True)
+    title, author = map(str.strip, title_and_author.split('::'))
+
+    genre = book_info_container.find('span', class_='d_book').find('a').get_text(strip=True)
+
+    book_data = {
+        'Название': title,
+        'Автор': author,
+        'Жанр': genre,
+    }
+
+    return book_data
+
+
 def get_book_genre(book_id):
     url = f'https://tululu.org/b{book_id}/'
     response = requests.get(url)
@@ -84,7 +106,6 @@ def download_image(url, filename, folder='images/'):
 
     return filepath
 
-
 os.makedirs('books', exist_ok=True)
 os.makedirs('images', exist_ok=True)
 os.makedirs('comments', exist_ok=True)
@@ -111,8 +132,9 @@ for book_id in range(1, 11):
     img_filename = f'{book_id}_{sanitize_filename(title)}'
     comments_filename = f'{book_id}_{sanitize_filename(title)}.txt'
 
+    book_data = parse_book_page(book_url)
+
     download_comments(book_id, os.path.join('comments', comments_filename))
     download_txt(txt_url, txt_filename)
     download_image(img_url, img_filename)
-    print(title)
-    print(genre)
+    print(book_data)
