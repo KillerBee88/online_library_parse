@@ -1,4 +1,4 @@
-requests
-BeautifulSoup4
-lxml
-pathvalidate
+requests==2.31.0
+BeautifulSoup4==4.12.2
+lxml==4.9.2
+pathvalidate==3.0.0
