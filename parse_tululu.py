@@ -59,14 +59,14 @@ def get_book_genre(book_id):
 def download_txt(txt_url, filename, folder='books'):
     response = requests.get(txt_url, allow_redirects=False)
     response.raise_for_status()
-    if response.status_code == 200:
+    if response.status_code == 200 and response.url == txt_url:
 
         os.makedirs(folder, exist_ok=True)
 
         with open(os.path.join(folder, filename), 'w') as file:
             file.write(response.text)
     else:
-        print(f'Ошибка при получении данных: {response.status_code}')
+        print(f'Страница {txt_url} не найдена')
 
 
 def download_image(img_url, filename, folder='images'):
@@ -113,7 +113,9 @@ def main():
     for book_id in range(start_id, end_id + 1):
         book_url = f"https://tululu.org/b{book_id}/"
         response = requests.get(book_url)
-        if response.status_code == 200:
+        if response.url != book_url:
+            print(f'Страница {book_url} не найдена')
+        else:
             soup = BeautifulSoup(response.text, "lxml")
             title_and_author = soup.find("h1").text
             split_title_and_author = title_and_author.split("::")
@@ -137,9 +139,7 @@ def main():
             download_comments(book_id, comments_filename)
             download_txt(txt_url, txt_filename)
             download_image(img_url, img_filename)
-            print(book_data)
-        else:
-            print(f'Ошибка при получении данных: {response.status_code}')
+            print(book_data) 
 
 
 if __name__ == '__main__':
