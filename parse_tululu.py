@@ -1,5 +1,7 @@
 import argparse
 import os
+import sys
+import time
 
 import requests
 from bs4 import BeautifulSoup
@@ -7,98 +9,108 @@ from pathvalidate import sanitize_filename
 from urllib.parse import urljoin
 
 
+def handle_request_exceptions(url, e):
+    print(f"Ошибка при получении данных по адресу {url}: {e}", file=sys.stderr)
+    return None
+
+def make_request(url):
+    while True:
+        try:
+            response = requests.get(url, allow_redirects=False)
+            response.raise_for_status()
+            return response
+        except requests.exceptions.HTTPError as e:
+            return handle_request_exceptions(url, e)
+        except requests.exceptions.ConnectionError as e:
+            time.sleep(5)
+            continue
+
+
 def get_book_page(book_url):
-    response = requests.get(book_url)
-    response.raise_for_status()
-    if response.status_code == 200:
-       return response.text
-    else:
-        print(f'Ошибка при получении данных: {response.status_code}')
+    response = make_request(book_url)
+    if response is None:
+        return None
+
+    return response.text
 
 
 def parse_book_page(book_url):
-    response = requests.get(book_url)
-    response.raise_for_status()
-    if response.status_code == 200:
+    response = make_request(book_url)
+    if response is None:
+        return None
 
-        soup = BeautifulSoup(response.text, 'lxml')
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-        book_info_container = soup.find('div', id='content')
+    title_and_author = soup.select_one('h1').text.split('::')
+    title = title_and_author[0].strip()
+    author = title_and_author[1].strip()
 
-        title_and_author = book_info_container.find('h1').get_text(strip=True)
-        title, author = map(str.strip, title_and_author.split('::'))
+    genre = soup.select_one('span.d_book a').text.strip()
 
-        genre = book_info_container.find('span', class_='d_book').find('a').get_text(strip=True)
+    img_url = soup.select_one('div.bookimage img')['src']
+    img_url = urljoin(book_url, img_url)
 
-        book_data = {
-            'Название': title,
-            'Автор': author,
-            'Жанр': genre,
-        }
+    book_info = {
+        'Название': title,
+        'Автор': author,
+        'Жанр': genre,
+        'Обложка': img_url
+    }
 
-        return book_data
-    else:
-        print(f'Ошибка при получении данных: {response.status_code}')
+    return book_info
 
 
 def get_book_genre(book_id):
     url = f'https://tululu.org/b{book_id}/'
-    response = requests.get(url)
-    response.raise_for_status()
-    if response.status_code == 200:
+    response = make_request(url)
+    if response is None:
+        return None
 
-        soup = BeautifulSoup(response.text, 'lxml')
+    soup = BeautifulSoup(response.text, 'lxml')
+    genre = soup.find('span', class_='d_book').find('a').get_text(strip=True)
 
-        genre = soup.find('span', class_='d_book').find('a').get_text(strip=True)
-
-        return genre
-    else:
-        print(f'Ошибка при получении данных: {response.status_code}')
+    return genre
 
 
 def download_txt(txt_url, filename, folder='books'):
-    response = requests.get(txt_url, allow_redirects=False)
-    response.raise_for_status()
-    if response.status_code == 200 and response.url == txt_url:
+    response = make_request(txt_url)
+    if response is None:
+        return
 
-        os.makedirs(folder, exist_ok=True)
+    os.makedirs(folder, exist_ok=True)
 
-        with open(os.path.join(folder, filename), 'w') as file:
-            file.write(response.text)
-    else:
-        print(f'Страница {txt_url} не найдена')
+    with open(os.path.join(folder, filename), 'w', encoding='utf-8') as file:
+        file.write(response.text)
+
 
 
 def download_image(img_url, filename, folder='images'):
-    response = requests.get(img_url, allow_redirects=False)
-    response.raise_for_status()
-    if response.status_code == 200:
+    response = make_request(img_url)
+    if response is None:
+        return
 
-        os.makedirs(folder, exist_ok=True)
-
-        with open(os.path.join(folder, filename), 'wb') as file:
-            file.write(response.content)
-    else:
-        print(f'Ошибка при получении данных: {response.status_code}')
+    os.makedirs(folder, exist_ok=True)
+    with open(os.path.join(folder, filename), 'wb') as file:
+        file.write(response.content)
 
 
-def download_comments(book_id, filename, folder='comments'):
+def get_comments(book_id):
     url = f'https://tululu.org/b{book_id}/'
-    response = requests.get(url)
-    response.raise_for_status()
-    if response.status_code == 200:
+    response = make_request(url)
+    if response is None:
+        return []
 
-        soup = BeautifulSoup(response.text, 'lxml')
+    soup = BeautifulSoup(response.text, 'lxml')
+    comments = soup.find_all('div', class_='texts')
+    return [comment.get_text(strip=True) for comment in comments]
 
-        comments = soup.find_all('div', class_='texts')
 
-        os.makedirs(folder, exist_ok=True)
+def save_comments(comments, filename, folder='comments'):
+    os.makedirs(folder, exist_ok=True)
 
-        with open(os.path.join(folder, filename), 'w') as file:
-            for comment in comments:
-                file.write(comment.get_text(strip=True) + '\n\n')
-    else:
-        print(f'Ошибка при получении данных: {response.status_code}')
+    with open(os.path.join(folder, filename), 'w', encoding='utf-8') as file:
+        for comment in comments:
+            file.write(comment + '\n\n')
 
 
 def main():
@@ -116,30 +128,22 @@ def main():
         if response.url != book_url:
             print(f'Страница {book_url} не найдена')
         else:
-            soup = BeautifulSoup(response.text, "lxml")
-            title_and_author = soup.find("h1").text
-            split_title_and_author = title_and_author.split("::")
-
-            if len(split_title_and_author) == 1:
+            book_info = parse_book_page(book_url)
+            if book_info is None:
                 continue
 
-            title, author = split_title_and_author
-            title = title.strip()
-            author = author.strip()
-            genre = get_book_genre(book_id)
-
             txt_url = f'https://tululu.org/txt.php?id={book_id}'
-            txt_filename = f'{book_id}_{sanitize_filename(title)}.txt'
-            img_url = urljoin(book_url, soup.find('div', class_='bookimage').find('img')['src'])
-            img_filename = f'{book_id}_{sanitize_filename(title)}.jpg'
-            comments_filename = f'{book_id}_{sanitize_filename(title)}.txt'
+            txt_filename = f'{book_id}_{sanitize_filename(book_info["Название"])}.txt'
+            img_url = book_info['Обложка']
+            img_filename = f'{book_id}_{sanitize_filename(book_info["Название"])}.jpg'
+            comments_filename = f'{book_id}_{sanitize_filename(book_info["Название"])}.txt'
 
-            book_data = parse_book_page(book_url)
+            comments = get_comments(book_id)
+            if comments:
+                save_comments(comments, comments_filename)
 
-            download_comments(book_id, comments_filename)
             download_txt(txt_url, txt_filename)
-            download_image(img_url, img_filename)
-            print(book_data) 
+            download_image(img_url, img_filename) 
 
 
 if __name__ == '__main__':
