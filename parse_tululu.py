@@ -9,29 +9,15 @@ from pathvalidate import sanitize_filename
 from urllib.parse import urljoin
 
 
-def handle_request_exceptions(url, e):
-    print(f"Ошибка при получении данных по адресу {url}: {e}", file=sys.stderr)
-    return None
-
 def make_request(url):
     while True:
         try:
             response = requests.get(url, allow_redirects=False)
             response.raise_for_status()
             return response
-        except requests.exceptions.HTTPError as e:
-            return handle_request_exceptions(url, e)
         except requests.exceptions.ConnectionError as e:
             time.sleep(5)
             continue
-
-
-def get_book_page(book_url):
-    response = make_request(book_url)
-    if response is None:
-        return None
-
-    return response.text
 
 
 def parse_book_page(book_url):
@@ -58,18 +44,6 @@ def parse_book_page(book_url):
     }
 
     return book_info
-
-
-def get_book_genre(book_id):
-    url = f'https://tululu.org/b{book_id}/'
-    response = make_request(url)
-    if response is None:
-        return None
-
-    soup = BeautifulSoup(response.text, 'lxml')
-    genre = soup.find('span', class_='d_book').find('a').get_text(strip=True)
-
-    return genre
 
 
 def download_txt(txt_url, filename, folder='books'):
