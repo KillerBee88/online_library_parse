@@ -22,8 +22,11 @@ def make_request(url):
 
 def parse_book_page(book_url):
     response = make_request(book_url)
-    if response is None:
-        return None
+    try:
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f'Error while making request: {e}')
+        return
 
     soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -48,7 +51,10 @@ def parse_book_page(book_url):
 
 def download_txt(txt_url, filename, folder='books'):
     response = make_request(txt_url)
-    if response is None:
+    try:
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f'Error while making request: {e}')
         return
 
     os.makedirs(folder, exist_ok=True)
@@ -60,7 +66,10 @@ def download_txt(txt_url, filename, folder='books'):
 
 def download_image(img_url, filename, folder='images'):
     response = make_request(img_url)
-    if response is None:
+    try:
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f'Error while making request: {e}')
         return
 
     os.makedirs(folder, exist_ok=True)
@@ -71,7 +80,10 @@ def download_image(img_url, filename, folder='images'):
 def get_comments(book_id):
     url = f'https://tululu.org/b{book_id}/'
     response = make_request(url)
-    if response is None:
+    try:
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f'Error while making request: {e}')
         return []
 
     soup = BeautifulSoup(response.text, 'lxml')
