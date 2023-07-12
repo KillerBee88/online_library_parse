@@ -46,14 +46,14 @@ def parse_book_page(book_url):
     img_url = soup.select_one('div.bookimage img')['src']
     img_url = urljoin(book_url, img_url)
 
-    book_info = {
+    book_description = {
         'Название': title,
         'Автор': author,
         'Жанр': genre,
         'Обложка': img_url
     }
 
-    return book_info
+    return book_description
 
 
 def download_txt(txt_url, filename, folder='books'):
@@ -121,15 +121,15 @@ def main():
         if not check_for_redirect(response, book_url):
             continue
         
-        book_info = parse_book_page(book_url)
-        if book_info is None:
+        book_description = parse_book_page(book_url)
+        if book_description is None:
             continue
 
         txt_url = f'https://tululu.org/txt.php?id={book_id}'
-        txt_filename = f'{book_id}_{sanitize_filename(book_info["Название"])}.txt'
-        img_url = book_info['Обложка']
-        img_filename = f'{book_id}_{sanitize_filename(book_info["Название"])}.jpg'
-        comments_filename = f'{book_id}_{sanitize_filename(book_info["Название"])}.txt'
+        txt_filename = f'{book_id}_{sanitize_filename(book_description["Название"])}.txt'
+        img_url = book_description['Обложка']
+        img_filename = f'{book_id}_{sanitize_filename(book_description["Название"])}.jpg'
+        comments_filename = f'{book_id}_{sanitize_filename(book_description["Название"])}.txt'
 
         comments = get_comments(book_id)
         if comments:
