@@ -16,15 +16,6 @@ def check_for_redirect(response, url):
     return True
 
 
-def make_request(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.text
-    except requests.exceptions.RequestException as e:
-        print(f'Ошибка при получении запроса: {e}')
-        return None
-
 
 def parse_book_page(html, book_url):
     soup = BeautifulSoup(html, 'html.parser')
@@ -96,6 +87,23 @@ def save_comments(comments, filename, folder='comments'):
     with open(os.path.join(folder, filename), 'w', encoding='utf-8') as file:
         for comment in comments:
             file.write(comment + '\n\n')
+
+
+def make_request(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response
+    except requests.exceptions.RequestException as e:
+        print(f'Ошибка при получении запроса: {e}')
+        return None
+
+def handle_request(url):
+    response = make_request(url)
+    if response is None:
+        return None
+
+    return response.text
 
 
 def main():
