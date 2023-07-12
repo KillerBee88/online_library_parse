@@ -9,6 +9,13 @@ from pathvalidate import sanitize_filename
 from urllib.parse import urljoin
 
 
+def check_for_redirect(response, url):
+    if response.url != url:
+        print(f'Страница {url} не найдена')
+        return False
+    return True
+
+
 def make_request(url):
     while True:
         try:
@@ -111,25 +118,25 @@ def main():
     for book_id in range(start_id, end_id + 1):
         book_url = f"https://tululu.org/b{book_id}/"
         response = requests.get(book_url)
-        if response.url != book_url:
-            print(f'Страница {book_url} не найдена')
-        else:
-            book_info = parse_book_page(book_url)
-            if book_info is None:
-                continue
+        if not check_for_redirect(response, book_url):
+            continue
+        
+        book_info = parse_book_page(book_url)
+        if book_info is None:
+            continue
 
-            txt_url = f'https://tululu.org/txt.php?id={book_id}'
-            txt_filename = f'{book_id}_{sanitize_filename(book_info["Название"])}.txt'
-            img_url = book_info['Обложка']
-            img_filename = f'{book_id}_{sanitize_filename(book_info["Название"])}.jpg'
-            comments_filename = f'{book_id}_{sanitize_filename(book_info["Название"])}.txt'
+        txt_url = f'https://tululu.org/txt.php?id={book_id}'
+        txt_filename = f'{book_id}_{sanitize_filename(book_info["Название"])}.txt'
+        img_url = book_info['Обложка']
+        img_filename = f'{book_id}_{sanitize_filename(book_info["Название"])}.jpg'
+        comments_filename = f'{book_id}_{sanitize_filename(book_info["Название"])}.txt'
 
-            comments = get_comments(book_id)
-            if comments:
-                save_comments(comments, comments_filename)
+        comments = get_comments(book_id)
+        if comments:
+            save_comments(comments, comments_filename)
 
-            download_txt(txt_url, txt_filename)
-            download_image(img_url, img_filename) 
+        download_txt(txt_url, txt_filename)
+        download_image(img_url, img_filename) 
 
 
 if __name__ == '__main__':
