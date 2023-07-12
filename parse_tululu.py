@@ -30,10 +30,10 @@ def parse_book_page(html, book_url):
     img_url = urljoin(book_url, img_url)
 
     book_description = {
-        'Название': title,
-        'Автор': author,
-        'Жанр': genre,
-        'Обложка': img_url
+        'Name': title,
+        'Author': author,
+        'Genre': genre,
+        'Cover': img_url
     }
 
     return book_description
@@ -44,7 +44,7 @@ def download_txt(txt_url, filename, folder='books'):
     try:
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
-        print(f'Error while making request: {e}')
+        print(f'Ошибка при выполнении запроса: {e}')
         return
 
     os.makedirs(folder, exist_ok=True)
@@ -59,7 +59,7 @@ def download_image(img_url, filename, folder='images'):
     try:
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
-        print(f'Error while making request: {e}')
+        print(f'Ошибка при выполнении запроса: {e}')
         return
 
     os.makedirs(folder, exist_ok=True)
@@ -73,7 +73,7 @@ def get_comments(book_id):
     try:
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
-        print(f'Error while making request: {e}')
+        print(f'Ошибка при выполнении запроса: {e}')
         return []
 
     soup = BeautifulSoup(response.text, 'lxml')
