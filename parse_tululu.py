@@ -67,16 +67,8 @@ def download_image(img_url, filename, folder='images'):
         file.write(response.content)
 
 
-def get_comments(book_id):
-    url = f'https://tululu.org/b{book_id}/'
-    response = make_request(url)
-    try:
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        print(f'Ошибка при выполнении запроса: {e}')
-        return []
-
-    soup = BeautifulSoup(response.text, 'lxml')
+def get_comments(html):
+    soup = BeautifulSoup(html, 'lxml')
     comments = soup.find_all('div', class_='texts')
     return [comment.get_text(strip=True) for comment in comments]
 
@@ -130,12 +122,12 @@ def main():
             continue
 
         txt_url = f'https://tululu.org/txt.php?id={book_id}'
-        txt_filename = f'{book_id}_{sanitize_filename(book_description["Название"])}.txt'
-        img_url = book_description['Обложка']
-        img_filename = f'{book_id}_{sanitize_filename(book_description["Название"])}.jpg'
-        comments_filename = f'{book_id}_{sanitize_filename(book_description["Название"])}.txt'
+        txt_filename = f'{book_id}_{sanitize_filename(book_description["Name"])}.txt'
+        img_url = book_description['Cover']
+        img_filename = f'{book_id}_{sanitize_filename(book_description["Name"])}.jpg'
+        comments_filename = f'{book_id}_{sanitize_filename(book_description["Name"])}.txt'
 
-        comments = get_comments(book_id)
+        comments = get_comments(html)
         if comments:
             save_comments(comments, comments_filename)
 
