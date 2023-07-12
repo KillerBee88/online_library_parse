@@ -17,25 +17,17 @@ def check_for_redirect(response, url):
 
 
 def make_request(url):
-    while True:
-        try:
-            response = requests.get(url, allow_redirects=False)
-            response.raise_for_status()
-            return response
-        except requests.exceptions.ConnectionError as e:
-            time.sleep(5)
-            continue
-
-
-def parse_book_page(book_url):
-    response = make_request(book_url)
     try:
+        response = requests.get(url)
         response.raise_for_status()
+        return response.text
     except requests.exceptions.RequestException as e:
-        print(f'Error while making request: {e}')
-        return
+        print(f'Ошибка при получении запроса: {e}')
+        return None
 
-    soup = BeautifulSoup(response.text, 'html.parser')
+
+def parse_book_page(html, book_url):
+    soup = BeautifulSoup(html, 'html.parser')
 
     title_and_author = soup.select_one('h1').text.split('::')
     title = title_and_author[0].strip()
@@ -117,11 +109,15 @@ def main():
 
     for book_id in range(start_id, end_id + 1):
         book_url = f"https://tululu.org/b{book_id}/"
-        response = requests.get(book_url)
-        if not check_for_redirect(response, book_url):
+        response = make_request(book_url)
+        if response is None:
             continue
         
-        book_description = parse_book_page(book_url)
+        if not check_for_redirect(response, book_url):
+            continue
+
+        html = response.text
+        book_description = parse_book_page(html, book_url)
         if book_description is None:
             continue
 
