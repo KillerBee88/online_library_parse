@@ -31,6 +31,9 @@ def parse_book_page(html, book_url):
         'Cover': img_url
     }
 
+    comments = soup.find_all('div', class_='texts')
+    book_description['Comments'] = [comment.get_text(strip=True) for comment in comments]
+
     return book_description
 
 
@@ -60,12 +63,6 @@ def download_image(img_url, filename, folder='images'):
     os.makedirs(folder, exist_ok=True)
     with open(os.path.join(folder, filename), 'wb') as file:
         file.write(response.content)
-
-
-def get_comments(html):
-    soup = BeautifulSoup(html, 'lxml')
-    comments = soup.find_all('div', class_='texts')
-    return [comment.get_text(strip=True) for comment in comments]
 
 
 def save_comments(comments, filename, folder='comments'):
@@ -112,7 +109,7 @@ def main():
         img_filename = f'{book_id}_{sanitize_filename(book_description["Name"])}.jpg'
         comments_filename = f'{book_id}_{sanitize_filename(book_description["Name"])}.txt'
 
-        comments = get_comments(html)
+        comments = book_description.get('Comments')
         if comments:
             print(f"Для книги {book_id} комментарии получены")
             save_comments(comments, comments_filename)
