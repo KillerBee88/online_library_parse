@@ -1,7 +1,5 @@
 import argparse
 import os
-import sys
-import time
 
 import requests
 from bs4 import BeautifulSoup
@@ -9,12 +7,9 @@ from pathvalidate import sanitize_filename
 from urllib.parse import urljoin
 
 
-def check_for_redirect(response, url):
-    if response.url != url:
-        print(f'Страница {url} не найдена')
-        return False
-    return True
-
+def check_for_redirect(response):
+    if response.history:
+        raise requests.exceptions.HTTPError("Страница была перенаправлена")
 
 
 def parse_book_page(html, book_url):
@@ -113,7 +108,10 @@ def main():
         if response is None:
             continue
         
-        if not check_for_redirect(response, book_url):
+        try:
+            check_for_redirect(response)
+        except requests.exceptions.HTTPError:
+            print(f"Страница {book_url} была перенаправлена")
             continue
 
         html = response.text
