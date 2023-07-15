@@ -1,6 +1,7 @@
 import argparse
 import os
-
+import sys
+import time
 import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
@@ -71,20 +72,21 @@ def main():
 
     for book_id in range(start_id, end_id + 1):
         book_url = f"https://tululu.org/b{book_id}/"
-        response = requests.get(book_url)
-        if response is None:
-            continue
-        
         try:
-            check_for_redirect(response)
-        except requests.exceptions.HTTPError:
-            print(f"Страница {book_url} была перенаправлена")
+            response = requests.get(book_url)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            print(f"Страница {book_url} была перенаправлена: {e}", file=sys.stderr)
+            continue
+        except requests.exceptions.ConnectionError as e:
+            print(f"Ошибка подключения к {book_url}: {e}", file=sys.stderr)
+            time.sleep(5)
             continue
 
         html = response.text
         book_description = parse_book_page(html, book_url)
         if book_description is None:
-            print(f"Для книги {book_id} описание не найдено")
+            print(f"Для книги {book_id} описание не найдено", file=sys.stderr)
             continue
         else:
             print(f"Для книги {book_id} описание получено")
@@ -106,13 +108,13 @@ def main():
         try:
             download_txt(txt_url, txt_filename, txt_params)
         except requests.exceptions.RequestException as e:
-            print(f'Ошибка при выполнении запроса для книги {book_id}: {e}')
+            print(f'Ошибка при выполнении запроса для книги {book_id}: {e}', file=sys.stderr)
             continue
 
         try:
             download_image(img_url, img_filename)
         except requests.exceptions.RequestException as e:
-            print(f'Ошибка при выполнении запроса для книги {book_id}: {e}')
+            print(f'Ошибка при выполнении запроса для книги {book_id}: {e}', file=sys.stderr)
             continue
 
 
