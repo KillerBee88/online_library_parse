@@ -39,14 +39,7 @@ def parse_book_page(html, book_url):
 
 def download_txt(txt_url, filename, params=None, folder='books'):
     response = requests.get(txt_url, params=params)
-    try:
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        print(f'Ошибка при выполнении запроса: {e}')
-        return
-
     os.makedirs(folder, exist_ok=True)
-
     with open(os.path.join(folder, filename), 'w', encoding='utf-8') as file:
         file.write(response.text)
 
@@ -54,12 +47,6 @@ def download_txt(txt_url, filename, params=None, folder='books'):
 
 def download_image(img_url, filename, folder='images'):
     response = requests.get(img_url)
-    try:
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        print(f'Ошибка при выполнении запроса: {e}')
-        return
-
     os.makedirs(folder, exist_ok=True)
     with open(os.path.join(folder, filename), 'wb') as file:
         file.write(response.content)
@@ -116,8 +103,17 @@ def main():
         else:
             print(f"Для книги {book_id} комментариев нет")
 
-        download_txt(txt_url, txt_filename, txt_params)
-        download_image(img_url, img_filename) 
+        try:
+            download_txt(txt_url, txt_filename, txt_params)
+        except requests.exceptions.RequestException as e:
+            print(f'Ошибка при выполнении запроса для книги {book_id}: {e}')
+            continue
+
+        try:
+            download_image(img_url, img_filename)
+        except requests.exceptions.RequestException as e:
+            print(f'Ошибка при выполнении запроса для книги {book_id}: {e}')
+            continue
 
 
 if __name__ == '__main__':
