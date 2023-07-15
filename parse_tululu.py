@@ -76,14 +76,6 @@ def save_comments(comments, filename, folder='comments'):
             file.write(comment + '\n\n')
 
 
-def handle_request(url):
-    response = requests.get(url)
-    if response is None:
-        return None
-
-    return response.text
-
-
 def main():
     parser = argparse.ArgumentParser(description='Download books from tululu.org')
     parser.add_argument('start_id', type=int, default=1, help='Start book ID')
