@@ -35,7 +35,7 @@ def parse_book_page(html, book_url):
 
 
 def download_txt(txt_url, filename, folder='books'):
-    response = make_request(txt_url)
+    response = requests.get(txt_url)
     try:
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
@@ -50,7 +50,7 @@ def download_txt(txt_url, filename, folder='books'):
 
 
 def download_image(img_url, filename, folder='images'):
-    response = make_request(img_url)
+    response = requests.get(img_url)
     try:
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
@@ -76,17 +76,8 @@ def save_comments(comments, filename, folder='comments'):
             file.write(comment + '\n\n')
 
 
-def make_request(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response
-    except requests.exceptions.RequestException as e:
-        print(f'Ошибка при получении запроса: {e}')
-        return None
-
 def handle_request(url):
-    response = make_request(url)
+    response = requests.get(url)
     if response is None:
         return None
 
@@ -104,7 +95,7 @@ def main():
 
     for book_id in range(start_id, end_id + 1):
         book_url = f"https://tululu.org/b{book_id}/"
-        response = make_request(book_url)
+        response = requests.get(book_url)
         if response is None:
             continue
         
