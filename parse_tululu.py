@@ -4,7 +4,7 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlencode, urlunparse
 
 
 def check_for_redirect(response):
@@ -105,7 +105,8 @@ def main():
         else:
             print(f"Для книги {book_id} описание получено")
 
-        txt_url = f'https://tululu.org/txt.php?id={book_id}'
+        txt_params = {'id': book_id}
+        txt_url = urlunparse(('https', 'tululu.org', '/txt.php', '', urlencode(txt_params), '')) 
         txt_filename = f'{book_id}_{sanitize_filename(book_description["Name"])}.txt'
         img_url = book_description['Cover']
         img_filename = f'{book_id}_{sanitize_filename(book_description["Name"])}.jpg'
