@@ -4,7 +4,7 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
-from urllib.parse import urljoin, urlencode, urlunparse
+from urllib.parse import urljoin
 
 
 def check_for_redirect(response):
@@ -34,8 +34,8 @@ def parse_book_page(html, book_url):
     return book_description
 
 
-def download_txt(txt_url, filename, folder='books'):
-    response = requests.get(txt_url)
+def download_txt(txt_url, filename, params=None, folder='books'):
+    response = requests.get(txt_url, params=params)
     try:
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
@@ -105,8 +105,8 @@ def main():
         else:
             print(f"Для книги {book_id} описание получено")
 
+        txt_url = 'https://tululu.org/txt.php'
         txt_params = {'id': book_id}
-        txt_url = urlunparse(('https', 'tululu.org', '/txt.php', '', urlencode(txt_params), '')) 
         txt_filename = f'{book_id}_{sanitize_filename(book_description["Name"])}.txt'
         img_url = book_description['Cover']
         img_filename = f'{book_id}_{sanitize_filename(book_description["Name"])}.jpg'
@@ -119,7 +119,7 @@ def main():
         else:
             print(f"Для книги {book_id} комментариев нет")
 
-        download_txt(txt_url, txt_filename)
+        download_txt(txt_url, txt_filename, txt_params)
         download_image(img_url, img_filename) 
 
 
