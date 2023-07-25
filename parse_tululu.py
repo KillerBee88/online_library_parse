@@ -37,6 +37,7 @@ def parse_book_page(html, book_url):
 
 def download_txt(txt_url, filename, params=None, folder='books'):
     response = requests.get(txt_url, params=params)
+    check_for_redirect(response)
     response.raise_for_status()
     
     os.makedirs(folder, exist_ok=True)
