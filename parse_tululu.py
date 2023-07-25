@@ -37,6 +37,8 @@ def parse_book_page(html, book_url):
 
 def download_txt(txt_url, filename, params=None, folder='books'):
     response = requests.get(txt_url, params=params)
+    response.raise_for_status()
+    
     os.makedirs(folder, exist_ok=True)
     
     with open(os.path.join(folder, filename), 'w', encoding='utf-8') as file:
@@ -46,6 +48,8 @@ def download_txt(txt_url, filename, params=None, folder='books'):
 
 def download_image(img_url, filename, folder='images'):
     response = requests.get(img_url)
+    response.raise_for_status()
+    
     os.makedirs(folder, exist_ok=True)
     
     with open(os.path.join(folder, filename), 'wb') as file:
@@ -101,9 +105,15 @@ def main():
         comments = book_description.get('Comments')
         if comments:
             print(f"Для книги {book_id} комментарии получены")
+            
+        try:
             save_comments(comments, comments_filename)
+        except Exception as e:
+            print(f'Ошибка при сохранении комментариев для книги {book_id}: {e}', file=sys.stderr)
+            continue
         else:
             print(f"Для книги {book_id} комментариев нет")
+            
         try:
             download_txt(txt_url, txt_filename, txt_params)
         except requests.exceptions.RequestException as e:
@@ -112,7 +122,7 @@ def main():
         
         try:
             download_image(img_url, img_filename)
-        except requests.exceptions.RequestException as e:
+        except (requests.exceptions.RequestException, requests.exceptions.ConnectionError) as e:
             print(f'Ошибка при выполнении запроса для книги {book_id}: {e}', file=sys.stderr)
             continue
 
