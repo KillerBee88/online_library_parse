@@ -83,6 +83,7 @@ def main():
         
         html = response.text
         book_description = parse_book_page(html, book_url)
+        img_url = book_description['Cover']
         if book_description is None:
             print(f"Для книги {book_id} описание не найдено", file=sys.stderr)
             continue
@@ -91,10 +92,11 @@ def main():
             
         txt_url = 'https://tululu.org/txt.php'
         txt_params = {'id': book_id}
-        txt_filename = f'{book_id}_{sanitize_filename(book_description["Name"])}.txt'
-        img_url = book_description['Cover']
-        img_filename = f'{book_id}_{sanitize_filename(book_description["Name"])}.jpg'
-        comments_filename = f'{book_id}_{sanitize_filename(book_description["Name"])}.txt'
+        sanitized_name = sanitize_filename(book_description["Name"])
+        txt_filename = f'{book_id}_{sanitized_name}.txt'
+        img_filename = f'{book_id}_{sanitized_name}.jpg'
+        comments_filename = f'{book_id}_{sanitized_name}.txt'
+
         
         comments = book_description.get('Comments')
         if comments:
