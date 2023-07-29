@@ -35,15 +35,24 @@ def parse_book_page(html, book_url):
     }
 
 
-def download_txt(txt_url, filename, params=None, folder='books'):
-    response = requests.get(txt_url, params=params)
-    check_for_redirect(response)
-    response.raise_for_status()
-    
-    os.makedirs(folder, exist_ok=True)
-    
-    with open(os.path.join(folder, filename), 'w', encoding='utf-8') as file:
-        file.write(response.text)
+def download_txt_with_retry(txt_url, filename, params=None, folder='books', max_retries=3, retry_delay=5):
+    for retry in range(max_retries):
+        try:
+            response = requests.get(txt_url, params=params)
+            check_for_redirect(response)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f'Ошибка при выполнении запроса: {e}', file=sys.stderr)
+            print(f'Повторная попытка ({retry + 1}/{max_retries}) через {retry_delay} секунд...')
+            time.sleep(retry_delay)
+        else:
+            os.makedirs(folder, exist_ok=True)
+            with open(os.path.join(folder, filename), 'w', encoding='utf-8') as file:
+                file.write(response.text)
+            return True
+    else:
+        print(f'Не удалось установить соединение с сервером для файла {filename}', file=sys.stderr)
+        return False
 
 
 
@@ -121,7 +130,7 @@ def main():
             print(f"Для книги {book_id} комментариев нет")
             
         try:
-            download_txt(txt_url, txt_filename, txt_params)
+            download_txt_with_retry(txt_url, txt_filename, txt_params)
         except requests.exceptions.RequestException as e:
             print(f'Ошибка при выполнении запроса для книги {book_id}: {e}', file=sys.stderr)
             continue
