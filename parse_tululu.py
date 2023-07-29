@@ -89,7 +89,7 @@ def main():
         html = response.text
         book_description = parse_book_page(html, book_url)
         img_url = book_description['Cover']
-        if book_description is None:
+        if not book_description:
             print(f"Для книги {book_id} описание не найдено", file=sys.stderr)
             continue
         else:
