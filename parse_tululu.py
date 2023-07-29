@@ -87,7 +87,12 @@ def main():
             continue
         
         html = response.text
-        book_description = parse_book_page(html, book_url)
+        try:
+            book_description = parse_book_page(html, book_url)
+        except (IndexError, AttributeError) as e:
+            print(f'Ошибка при парсинге книги {book_id}: {e}', file=sys.stderr)
+            continue
+        
         img_url = book_description['Cover']
         if not book_description:
             print(f"Для книги {book_id} описание не найдено", file=sys.stderr)
@@ -109,7 +114,7 @@ def main():
             
         try:
             save_comments(comments, comments_filename)
-        except Exception as e:
+        except OSError as e:
             print(f'Ошибка при сохранении комментариев для книги {book_id}: {e}', file=sys.stderr)
             continue
         else:
@@ -123,7 +128,7 @@ def main():
         
         try:
             download_image(img_url, img_filename)
-        except (requests.exceptions.RequestException, requests.exceptions.ConnectionError) as e:
+        except requests.exceptions.RequestException as e:
             print(f'Ошибка при выполнении запроса для книги {book_id}: {e}', file=sys.stderr)
             continue
 
