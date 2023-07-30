@@ -122,12 +122,6 @@ def main():
             continue
         
         img_url = book_description['Cover']
-        if not book_description:
-            print(f"Для книги {book_id} описание не найдено", file=sys.stderr)
-            continue
-        else:
-            print(f"Для книги {book_id} описание получено")
-            
         txt_url = 'https://tululu.org/txt.php'
         txt_params = {'id': book_id}
         sanitized_name = sanitize_filename(book_description["Name"])
