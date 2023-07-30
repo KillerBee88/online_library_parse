@@ -8,6 +8,25 @@ from pathvalidate import sanitize_filename
 from urllib.parse import urljoin
 
 
+class RedirectError(requests.exceptions.HTTPError):
+    pass
+
+
+class ConnectionError(requests.exceptions.ConnectionError):
+    pass
+
+
+class ParsingError(Exception):
+    pass
+
+
+class RequestError(requests.exceptions.RequestException):
+    pass
+
+
+class CommentSaveError(OSError):
+    pass
+
 def check_for_redirect(response):
     if response.history:
         raise requests.exceptions.HTTPError("Страница была перенаправлена")
@@ -41,7 +60,7 @@ def download_txt_with_retry(txt_url, filename, params=None, folder='books', max_
             response = requests.get(txt_url, params=params)
             check_for_redirect(response)
             response.raise_for_status()
-        except requests.exceptions.RequestException as e:
+        except RequestError as e:
             print(f'Ошибка при выполнении запроса: {e}', file=sys.stderr)
             print(f'Повторная попытка ({retry + 1}/{max_retries}) через {retry_delay} секунд...')
             time.sleep(retry_delay)
@@ -87,10 +106,10 @@ def main():
         try:
             response = requests.get(book_url)
             response.raise_for_status()
-        except requests.exceptions.HTTPError as e:
+        except RedirectError as e:
             print(f"Страница {book_url} была перенаправлена: {e}", file=sys.stderr)
             continue
-        except requests.exceptions.ConnectionError as e:
+        except ConnectionError as e:
             print(f"Ошибка подключения к {book_url}: {e}", file=sys.stderr)
             time.sleep(5)
             continue
@@ -123,7 +142,7 @@ def main():
             
         try:
             save_comments(comments, comments_filename)
-        except OSError as e:
+        except CommentSaveError as e:
             print(f'Ошибка при сохранении комментариев для книги {book_id}: {e}', file=sys.stderr)
             continue
         else:
@@ -131,13 +150,13 @@ def main():
             
         try:
             download_txt_with_retry(txt_url, txt_filename, txt_params)
-        except requests.exceptions.RequestException as e:
+        except RequestError as e:
             print(f'Ошибка при выполнении запроса для книги {book_id}: {e}', file=sys.stderr)
             continue
         
         try:
             download_image(img_url, img_filename)
-        except requests.exceptions.RequestException as e:
+        except RequestError as e:
             print(f'Ошибка при выполнении запроса для книги {book_id}: {e}', file=sys.stderr)
             continue
 
