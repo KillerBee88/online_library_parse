@@ -50,13 +50,15 @@ def download_txt_with_retry(txt_url, filename, params=None, folder='books', max_
             print(f'Повторная попытка ({retry + 1}/{max_retries}) через {retry_delay} секунд...')
             time.sleep(retry_delay)
         else:
-            os.makedirs(folder, exist_ok=True)
-            with open(os.path.join(folder, filename), 'w', encoding='utf-8') as file:
-                file.write(response.text)
-            return True
+            break
     else:
-        print(f'Не удалось установить соединение с сервером для файла {filename}', file=sys.stderr)
+        print(f'Не удалось установить соединение с сервером для {filename}', file=sys.stderr)
         return False
+    
+    os.makedirs(folder, exist_ok=True)
+    with open(os.path.join(folder, filename), 'w', encoding='utf-8') as file:
+        file.write(response.text)
+    return True
 
 
 
