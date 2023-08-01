@@ -8,6 +8,10 @@ from pathvalidate import sanitize_filename
 from urllib.parse import urljoin
 
 
+class ParsingError(Exception):
+    pass
+
+
 def check_for_redirect(response):
     if response.history:
         raise requests.exceptions.HTTPError("Страница была перенаправлена")
@@ -98,7 +102,7 @@ def main():
         html = response.text
         try:
             book_description = parse_book_page(html, book_url)
-        except (IndexError, AttributeError) as e:
+        except ParsingError as e:
             print(f'Ошибка при парсинге книги {book_id}: {e}', file=sys.stderr)
             continue
         
