@@ -40,21 +40,21 @@ def parse_book_page(html, book_url):
 
 
 def download_txt_with_retry(txt_url, filename, params=None, folder='books', max_retries=3, retry_delay=5):
-    for retry in range(max_retries):
+    retries = 0
+    while retries < max_retries:
+        response = requests.get(txt_url, params=params)
         try:
-            response = requests.get(txt_url, params=params)
-            check_for_redirect(response)
             response.raise_for_status()
+            break
         except requests.exceptions.RequestException as e:
             print(f'Ошибка при выполнении запроса: {e}', file=sys.stderr)
-            print(f'Повторная попытка ({retry + 1}/{max_retries}) через {retry_delay} секунд...')
+            print(f'Повторная попытка ({retries + 1}/{max_retries}) через {retry_delay} секунд...')
             time.sleep(retry_delay)
-        else:
-            break
+            retries += 1
     else:
         print(f'Не удалось установить соединение с сервером для {filename}', file=sys.stderr)
         return False
-    
+
     os.makedirs(folder, exist_ok=True)
     with open(os.path.join(folder, filename), 'w', encoding='utf-8') as file:
         file.write(response.text)
@@ -84,10 +84,10 @@ def main():
     parser.add_argument('start_id', type=int, default=1, help='Start book ID')
     parser.add_argument('end_id', type=int, default=10, help='End book ID')
     args = parser.parse_args()
-    
+
     start_id = args.start_id
     end_id = args.end_id
-    
+
     for book_id in range(start_id, end_id + 1):
         book_url = f"https://tululu.org/b{book_id}/"
         try:
@@ -100,14 +100,10 @@ def main():
             print(f"Ошибка подключения к {book_url}: {e}", file=sys.stderr)
             time.sleep(5)
             continue
-        
+
         html = response.text
-        try:
-            book_description = parse_book_page(html, book_url)
-        except ParsingError as e:
-            print(f'Ошибка при парсинге книги {book_id}: {e}', file=sys.stderr)
-            continue
-        
+        book_description = parse_book_page(html, book_url)
+
         img_url = book_description['Cover']
         txt_url = 'https://tululu.org/txt.php'
         txt_params = {'id': book_id}
@@ -116,11 +112,11 @@ def main():
         img_filename = f'{book_id}_{sanitized_name}.jpg'
         comments_filename = f'{book_id}_{sanitized_name}.txt'
 
-        
+
         comments = book_description.get('Comments')
         if comments:
             print(f"Для книги {book_id} комментарии получены")
-            
+
         try:
             save_comments(comments, comments_filename)
         except OSError as e:
@@ -128,13 +124,13 @@ def main():
             continue
         else:
             print(f"Для книги {book_id} комментариев нет")
-            
+
         try:
             download_txt_with_retry(txt_url, txt_filename, txt_params)
         except requests.exceptions.RequestException as e:
             print(f'Ошибка при выполнении запроса для книги {book_id}: {e}', file=sys.stderr)
             continue
-        
+
         try:
             download_image(img_url, img_filename)
         except requests.exceptions.RequestException as e:
