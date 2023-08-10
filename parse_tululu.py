@@ -39,11 +39,28 @@ def parse_book_page(html, book_url):
     }
 
 
+def download_image(img_url, filename, folder='images'):
+    response = requests.get(img_url)
+    response.raise_for_status()
+    
+    os.makedirs(folder, exist_ok=True)
+    
+    with open(os.path.join(folder, filename), 'wb') as file:
+        file.write(response.content)
+
+
+def save_comments(comments, filename, folder='comments'):
+    os.makedirs(folder, exist_ok=True)
+    
+    with open(os.path.join(folder, filename), 'w', encoding='utf-8') as file:
+        file.writelines(comment + '\n\n' for comment in comments)
+        
+
 def download_txt_with_retry(txt_url, filename, params=None, folder='books', max_retries=3, retry_delay=5):
     retries = 0
     while retries < max_retries:
-        response = requests.get(txt_url, params=params)
         try:
+            response = requests.get(txt_url, params=params)
             response.raise_for_status()
             break
         except requests.exceptions.RequestException as e:
@@ -61,24 +78,6 @@ def download_txt_with_retry(txt_url, filename, params=None, folder='books', max_
     return True
 
 
-
-def download_image(img_url, filename, folder='images'):
-    response = requests.get(img_url)
-    response.raise_for_status()
-    
-    os.makedirs(folder, exist_ok=True)
-    
-    with open(os.path.join(folder, filename), 'wb') as file:
-        file.write(response.content)
-
-
-def save_comments(comments, filename, folder='comments'):
-    os.makedirs(folder, exist_ok=True)
-    
-    with open(os.path.join(folder, filename), 'w', encoding='utf-8') as file:
-        file.writelines(comment + '\n\n' for comment in comments)
-
-
 def main():
     parser = argparse.ArgumentParser(description='Download books from tululu.org')
     parser.add_argument('start_id', type=int, default=1, help='Start book ID')
@@ -93,11 +92,8 @@ def main():
         try:
             response = requests.get(book_url)
             response.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            print(f"Страница {book_url} была перенаправлена: {e}", file=sys.stderr)
-            continue
-        except requests.exceptions.ConnectionError as e:
-            print(f"Ошибка подключения к {book_url}: {e}", file=sys.stderr)
+        except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
+            print(f"Ошибка при выполнении запроса для книги {book_id}: {e}", file=sys.stderr)
             time.sleep(5)
             continue
 
@@ -112,6 +108,12 @@ def main():
         img_filename = f'{book_id}_{sanitized_name}.jpg'
         comments_filename = f'{book_id}_{sanitized_name}.txt'
 
+        try:
+            response = download_txt_with_retry(txt_url, txt_filename, txt_params)
+            download_image(img_url, img_filename)
+        except (requests.exceptions.RequestException, requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
+            print(f'Ошибка при выполнении запроса для книги {book_id}: {e}', file=sys.stderr)
+            continue
 
         comments = book_description.get('Comments')
         if comments:
@@ -124,18 +126,6 @@ def main():
             continue
         else:
             print(f"Для книги {book_id} комментариев нет")
-
-        try:
-            download_txt_with_retry(txt_url, txt_filename, txt_params)
-        except requests.exceptions.RequestException as e:
-            print(f'Ошибка при выполнении запроса для книги {book_id}: {e}', file=sys.stderr)
-            continue
-
-        try:
-            download_image(img_url, img_filename)
-        except requests.exceptions.RequestException as e:
-            print(f'Ошибка при выполнении запроса для книги {book_id}: {e}', file=sys.stderr)
-            continue
 
 
 if __name__ == '__main__':
