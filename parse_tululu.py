@@ -70,7 +70,7 @@ def download_txt_with_retry(txt_url, filename, params=None, folder='books', max_
             retries += 1
     else:
         print(f'Не удалось установить соединение с сервером для {filename}', file=sys.stderr)
-        return False
+        return None
 
     os.makedirs(folder, exist_ok=True)
     with open(os.path.join(folder, filename), 'w', encoding='utf-8') as file:
