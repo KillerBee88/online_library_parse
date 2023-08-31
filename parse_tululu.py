@@ -8,10 +8,6 @@ from pathvalidate import sanitize_filename
 from urllib.parse import urljoin
 
 
-class ParsingError(Exception):
-    pass
-
-
 def check_for_redirect(response):
     if response.history:
         raise requests.exceptions.HTTPError("Страница была перенаправлена")
