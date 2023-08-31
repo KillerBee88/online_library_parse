@@ -91,6 +91,7 @@ def main():
         book_url = f"https://tululu.org/b{book_id}/"
         try:
             response = requests.get(book_url)
+            check_for_redirect(response)
             response.raise_for_status()
         except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
             print(f"Ошибка при выполнении запроса для книги {book_id}: {e}", file=sys.stderr)
