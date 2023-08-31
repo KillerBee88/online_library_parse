@@ -127,7 +127,8 @@ def main():
             print(f'Ошибка при сохранении комментариев для книги {book_id}: {e}', file=sys.stderr)
             continue
         else:
-            print(f"Для книги {book_id} комментариев нет")
+            if not comments:
+                print(f"Для книги {book_id} комментариев нет")
 
 
 if __name__ == '__main__':
