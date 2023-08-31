@@ -114,6 +114,7 @@ def main():
             download_image(img_url, img_filename)
         except (requests.exceptions.RequestException, requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
             print(f'Ошибка при выполнении запроса для книги {book_id}: {e}', file=sys.stderr)
+            time.sleep(5)
             continue
 
         comments = book_description.get('Comments')
