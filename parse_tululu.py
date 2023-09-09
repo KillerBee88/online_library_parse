@@ -24,7 +24,7 @@ def parse_book_page(html, book_url):
 
     img_url = urljoin(book_url, soup.select_one('div.bookimage img')['src'])
 
-    comments = [comment.get_text(strip=True) for comment in soup.find_all('div', class_='texts')]
+    comments = [comment.get_text(strip=True) for comment in soup.select('div.texts')]
 
     return {
         'Name': title,
