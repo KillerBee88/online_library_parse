@@ -5,17 +5,24 @@ import re
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from parse_tululu import parse_book_page, download_image, save_comments, download_txt_with_retry
+import os
 
 base_url = "https://tululu.org/l55/"
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Download books from tululu.org')
-    parser.add_argument('pages', type=int, nargs='+', help='Page numbers')
+    parser = argparse.ArgumentParser(description='Скачивание книг с tululu.org')
+    parser.add_argument('pages', type=int, nargs='+', help='Номера страниц')
+    parser.add_argument('--dest_folder', help='Путь к каталогу для сохранения')
+    parser.add_argument('--skip_imgs', action='store_true', help='Не загружать изображения')
+    parser.add_argument('--skip_txt', action='store_true', help='Не загружать книги')
     return parser.parse_args()
 
 def main():
     args = parse_args()
     pages = args.pages
+    dest_folder = args.dest_folder
+    skip_imgs = args.skip_imgs
+    skip_txt = args.skip_txt
 
     book_links = []
     book_descriptions = []
@@ -42,12 +49,22 @@ def main():
         book_descriptions.append(book_description)
         book_name = book_description['Name']
         valid_filename = re.sub(r'[\\/*?:"<>|]', '', book_name)
-        book_cover = download_image(book_description['Cover'], valid_filename + '.jpg')
-        book_id = re.search(r'\d+', book_link).group()
-        book_text = download_txt_with_retry(f'https://tululu.org/txt.php?id={book_id}', valid_filename + '.txt')
+        
+        if not skip_imgs:
+            book_cover = download_image(book_description['Cover'], valid_filename + '.jpg', dest_folder)
+        
+        if not skip_txt:
+            book_id = re.search(r'\d+', book_link).group()
+            book_text = download_txt_with_retry(f'https://tululu.org/txt.php?id={book_id}', valid_filename + '.txt', dest_folder)
 
-    with open('book_descriptions.json', 'w', encoding='utf-8') as file:
-        json.dump(book_descriptions, file, ensure_ascii=False, indent=4)
+    if dest_folder:
+        os.makedirs(dest_folder, exist_ok=True)
+        dest_file = os.path.join(dest_folder, 'book_descriptions.json')
+        with open(dest_file, 'w', encoding='utf-8') as file:
+            json.dump(book_descriptions, file, ensure_ascii=False, indent=4)
+    else:
+        with open('book_descriptions.json', 'w', encoding='utf-8') as file:
+            json.dump(book_descriptions, file, ensure_ascii=False, indent=4)
 
 if __name__ == '__main__':
     main()
