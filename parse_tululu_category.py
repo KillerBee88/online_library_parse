@@ -1,3 +1,4 @@
+import argparse
 import requests
 import json
 import re
@@ -7,34 +8,46 @@ from parse_tululu import parse_book_page, download_image, save_comments, downloa
 
 base_url = "https://tululu.org/l55/"
 
-book_links = []
-book_descriptions = []
+def parse_args():
+    parser = argparse.ArgumentParser(description='Download books from tululu.org')
+    parser.add_argument('pages', type=int, nargs='+', help='Page numbers')
+    return parser.parse_args()
 
-for page in range(1, 2):
-    url = f"{base_url}{page}/"
+def main():
+    args = parse_args()
+    pages = args.pages
 
-    response = requests.get(url)
-    response.raise_for_status()
+    book_links = []
+    book_descriptions = []
 
-    soup = BeautifulSoup(response.text, 'html.parser')
+    for page in pages:
+        url = f"{base_url}{page}/"
 
-    book_cards = soup.select('table.d_book')
+        response = requests.get(url)
+        response.raise_for_status()
 
-    for book_card in book_cards:
-        book_link = urljoin(url, book_card.select_one('a')['href'])
-        book_links.append(book_link)
+        soup = BeautifulSoup(response.text, 'html.parser')
 
-for book_link in book_links:
-    response = requests.get(book_link)
-    response.raise_for_status()
-    html = response.text
-    book_description = parse_book_page(html, book_link)
-    book_descriptions.append(book_description)
-    book_name = book_description['Name']
-    valid_filename = re.sub(r'[\\/*?:"<>|]', '', book_name)
-    book_cover = download_image(book_description['Cover'], valid_filename + '.jpg')
-    book_id = re.search(r'\d+', book_link).group()
-    book_text = download_txt_with_retry(f'https://tululu.org/txt.php?id={book_id}', valid_filename + '.txt')
+        book_cards = soup.select('table.d_book')
 
-with open('book_descriptions.json', 'w', encoding='utf-8') as file:
-    json.dump(book_descriptions, file, ensure_ascii=False, indent=4)
+        for book_card in book_cards:
+            book_link = urljoin(url, book_card.select_one('a')['href'])
+            book_links.append(book_link)
+
+    for book_link in book_links:
+        response = requests.get(book_link)
+        response.raise_for_status()
+        html = response.text
+        book_description = parse_book_page(html, book_link)
+        book_descriptions.append(book_description)
+        book_name = book_description['Name']
+        valid_filename = re.sub(r'[\\/*?:"<>|]', '', book_name)
+        book_cover = download_image(book_description['Cover'], valid_filename + '.jpg')
+        book_id = re.search(r'\d+', book_link).group()
+        book_text = download_txt_with_retry(f'https://tululu.org/txt.php?id={book_id}', valid_filename + '.txt')
+
+    with open('book_descriptions.json', 'w', encoding='utf-8') as file:
+        json.dump(book_descriptions, file, ensure_ascii=False, indent=4)
+
+if __name__ == '__main__':
+    main()
