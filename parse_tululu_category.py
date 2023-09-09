@@ -8,10 +8,9 @@ from parse_tululu import parse_book_page, download_image, save_comments, downloa
 base_url = "https://tululu.org/l55/"
 
 book_links = []
-
 book_descriptions = []
 
-for page in range(1, 4):
+for page in range(1, 2):
     url = f"{base_url}{page}/"
 
     response = requests.get(url)
@@ -19,12 +18,11 @@ for page in range(1, 4):
 
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    book_cards = soup.find_all('table', class_='d_book')
+    book_cards = soup.select('table.d_book')
 
     for book_card in book_cards:
-        book_link = book_card.find('a')['href']
-        full_book_link = urljoin(url, book_link)
-        book_links.append(full_book_link)
+        book_link = urljoin(url, book_card.select_one('a')['href'])
+        book_links.append(book_link)
 
 for book_link in book_links:
     response = requests.get(book_link)
@@ -37,7 +35,6 @@ for book_link in book_links:
     book_cover = download_image(book_description['Cover'], valid_filename + '.jpg')
     book_id = re.search(r'\d+', book_link).group()
     book_text = download_txt_with_retry(f'https://tululu.org/txt.php?id={book_id}', valid_filename + '.txt')
-
 
 with open('book_descriptions.json', 'w', encoding='utf-8') as file:
     json.dump(book_descriptions, file, ensure_ascii=False, indent=4)
