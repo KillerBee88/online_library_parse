@@ -53,11 +53,11 @@ def main():
         valid_filename = re.sub(r'[\\/*?:"<>|]', '', book_name)
         
         if not skip_imgs:
-            book_cover = download_image(book_description['Cover'], valid_filename + '.jpg', dest_folder)
+            book_cover = download_image(book_description['Cover'], f'{valid_filename}.jpg', dest_folder)
         
         if not skip_txt:
             book_id = re.search(r'\d+', book_link).group()
-            book_text = download_txt_with_retry(f'https://tululu.org/txt.php?id={book_id}', valid_filename + '.txt', dest_folder)
+            book_text = download_txt_with_retry(f'https://tululu.org/txt.php?id={book_id}', f'{valid_filename}.txt', dest_folder)
 
     if dest_folder:
         os.makedirs(dest_folder, exist_ok=True)
