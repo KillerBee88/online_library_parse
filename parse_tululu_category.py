@@ -1,6 +1,8 @@
 import argparse
 import requests
 import json
+import time
+import sys
 import re
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
@@ -8,6 +10,7 @@ from parse_tululu import parse_book_page, download_image, save_comments, downloa
 import os
 
 base_url = "https://tululu.org/l55/"
+httpstat_url = "http://httpstat.us/"
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Скачивание книг с tululu.org')
@@ -16,6 +19,16 @@ def parse_args():
     parser.add_argument('--skip_imgs', action='store_true', help='Не загружать изображения')
     parser.add_argument('--skip_txt', action='store_true', help='Не загружать книги')
     return parser.parse_args()
+
+
+def check_network_status():
+    try:
+        response = requests.get(httpstat_url)
+        response.raise_for_status()
+        return True
+    except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError):
+        return False
+    
 
 def main():
     args = parse_args()
@@ -30,6 +43,10 @@ def main():
     for page in pages:
         url = f"{base_url}{page}/"
 
+        if not check_network_status():
+            print("Ошибка сети. Проверьте подключение к интернету.", file=sys.stderr)
+            return
+
         response = requests.get(url)
         check_for_redirect(response)
         response.raise_for_status()
@@ -43,6 +60,10 @@ def main():
             book_links.append(book_link)
 
     for book_link in book_links:
+        if not check_network_status():
+            print("Ошибка сети. Проверьте подключение к интернету.", file=sys.stderr)
+            continue
+
         response = requests.get(book_link)
         check_for_redirect(response)
         response.raise_for_status()
@@ -59,6 +80,8 @@ def main():
             book_id = re.search(r'\d+', book_link).group()
             book_text = download_txt_with_retry(f'https://tululu.org/txt.php?id={book_id}', f'{valid_filename}.txt', dest_folder)
 
+        time.sleep(1)
+    
     dest_file = os.path.join(dest_folder, 'book_descriptions.json') if dest_folder else 'book_descriptions.json'
 
     with open(dest_file, 'w', encoding='utf-8') as file:
