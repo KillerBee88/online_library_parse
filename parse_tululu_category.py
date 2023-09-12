@@ -4,7 +4,7 @@ import json
 import re
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-from parse_tululu import parse_book_page, download_image, save_comments, download_txt_with_retry
+from parse_tululu import parse_book_page, download_image, save_comments, download_txt_with_retry, check_for_redirect
 import os
 
 base_url = "https://tululu.org/l55/"
@@ -31,6 +31,7 @@ def main():
         url = f"{base_url}{page}/"
 
         response = requests.get(url)
+        check_for_redirect(response)
         response.raise_for_status()
 
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -43,6 +44,7 @@ def main():
 
     for book_link in book_links:
         response = requests.get(book_link)
+        check_for_redirect(response)
         response.raise_for_status()
         html = response.text
         book_description = parse_book_page(html, book_link)
