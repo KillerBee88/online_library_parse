@@ -33,9 +33,15 @@ def main():
 
     for page in pages:
         url = f"{base_url}{page}/"
-        response = requests.get(url)
-        check_for_redirect(response)
-        response.raise_for_status()
+
+        try:
+            response = requests.get(url)
+            check_for_redirect(response)
+            response.raise_for_status()
+        except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
+            print(f"Ошибка при выполнении запроса для страницы {url}: {e}", file=sys.stderr)
+            time.sleep(5)
+            continue
 
         soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -46,9 +52,15 @@ def main():
             book_links.append(book_link)
 
     for book_link in book_links:
-        response = requests.get(book_link)
-        check_for_redirect(response)
-        response.raise_for_status()
+        try:
+            response = requests.get(book_link)
+            check_for_redirect(response)
+            response.raise_for_status()
+        except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as e:
+            print(f"Ошибка при выполнении запроса для книги {book_link}: {e}", file=sys.stderr)
+            time.sleep(5)
+            continue
+
         html = response.text
         book_description = parse_book_page(html, book_link)
         book_descriptions.append(book_description)
