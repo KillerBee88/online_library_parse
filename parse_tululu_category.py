@@ -1,6 +1,7 @@
 import argparse
 import requests
 import json
+import urllib.parse
 import time
 import sys
 import re
@@ -72,7 +73,12 @@ def main():
         
         if dest_folder and not skip_txt:
             book_id = re.search(r'\d+', book_link).group()
-            book_text = download_txt_with_retry(f'https://tululu.org/txt.php?id={book_id}', f'{valid_filename}.txt', dest_folder)
+            book_params = {
+                'id': book_id
+            }
+            book_params_encoded = urllib.parse.urlencode(book_params)
+            url = f'https://tululu.org/txt.php#{book_params_encoded}'
+            book_text = download_txt_with_retry(url, f'{valid_filename}.txt', dest_folder)
 
         time.sleep(1)
     
