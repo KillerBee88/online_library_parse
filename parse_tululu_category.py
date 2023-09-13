@@ -19,15 +19,6 @@ def parse_args():
     parser.add_argument('--skip_imgs', action='store_true', help='Не загружать изображения')
     parser.add_argument('--skip_txt', action='store_true', help='Не загружать книги')
     return parser.parse_args()
-
-
-def check_network_status():
-    try:
-        response = requests.get(httpstat_url)
-        response.raise_for_status()
-        return True
-    except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError):
-        return False
     
 
 def main():
