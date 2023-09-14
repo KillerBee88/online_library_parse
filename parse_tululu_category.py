@@ -69,17 +69,18 @@ def main():
         valid_filename = re.sub(r'[\\/*?:"<>|]', '', book_name)
         
         if dest_folder and not skip_imgs:
-            book_cover = download_image(book_description['Cover'], f'{valid_filename}.jpg', dest_folder)
+            image_folder = os.path.join(dest_folder, 'images')
+            os.makedirs(image_folder, exist_ok=True)
+            book_cover = download_image(book_description['Cover'], f'{valid_filename}.jpg', folder=image_folder)
         
         if dest_folder and not skip_txt:
+            book_folder = os.path.join(dest_folder, 'books')
+            os.makedirs(book_folder, exist_ok=True)
             book_id = re.search(r'\d+', book_link).group()
-            book_params = {
-                'id': book_id
-            }
-            book_params_encoded = urllib.parse.urlencode(book_params)
-            url = f'https://tululu.org/txt.php#{book_params_encoded}'
-            book_text = download_txt_with_retry(url, f'{valid_filename}.txt', dest_folder)
-
+            params = {'id': book_id}
+            url = 'https://tululu.org/txt.php'
+            book_text = download_txt_with_retry(url, f'{valid_filename}.txt', params=params, folder=book_folder)
+                
         time.sleep(1)
     
     dest_file = os.path.join(dest_folder, 'book_descriptions.json') if dest_folder else 'book_descriptions.json'
