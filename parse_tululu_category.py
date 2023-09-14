@@ -71,7 +71,10 @@ def main():
         if dest_folder and not skip_imgs:
             image_folder = os.path.join(dest_folder, 'images')
             os.makedirs(image_folder, exist_ok=True)
-            book_cover = download_image(book_description['Cover'], f'{valid_filename}.jpg', folder=image_folder)
+            try:
+                book_cover = download_image(book_description['Cover'], f'{valid_filename}.jpg', folder=image_folder)
+            except requests.exceptions.RequestException as e:
+                print(f'Ошибка при скачивании изображения {valid_filename}.jpg: {e}', file=sys.stderr)
         
         if dest_folder and not skip_txt:
             book_folder = os.path.join(dest_folder, 'books')
@@ -79,7 +82,10 @@ def main():
             book_id = re.search(r'\d+', book_link).group()
             params = {'id': book_id}
             url = 'https://tululu.org/txt.php'
-            book_text = download_txt_with_retry(url, f'{valid_filename}.txt', params=params, folder=book_folder)
+            try:
+                book_text = download_txt_with_retry(url, f'{valid_filename}.txt', params=params, folder=book_folder)
+            except requests.exceptions.RequestException as e:
+                print(f'Ошибка при скачивании текстового файла {valid_filename}.txt: {e}', file=sys.stderr)
                 
         time.sleep(1)
     
