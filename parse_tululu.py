@@ -57,6 +57,7 @@ def download_txt_with_retry(txt_url, filename, params=None, folder='books', max_
     while retries < max_retries:
         try:
             response = requests.get(txt_url, params=params)
+            check_for_redirect(response)
             response.raise_for_status()
             break
         except requests.exceptions.RequestException as e:
